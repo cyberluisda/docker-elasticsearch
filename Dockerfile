@@ -1,5 +1,5 @@
-FROM quay.io/pires/docker-jre:8u131_r2
-MAINTAINER pjpires@gmail.com
+FROM azul/zulu-openjdk:8u144
+MAINTAINER cyberluisda@gmail.com
 
 # Export HTTP & Transport
 EXPOSE 9200 9300
@@ -12,13 +12,12 @@ ENV ES_TARBALL_ASC "${DOWNLOAD_URL}/elasticsearch-${ES_VERSION}.tar.gz.asc"
 ENV GPG_KEY "46095ACC8548582C1A2699A9D27D666CD88E42B4"
 
 # Install Elasticsearch.
-RUN apk add --no-cache --update bash ca-certificates su-exec util-linux
-RUN apk add --no-cache -t .build-deps wget gnupg openssl \
-  && cd /tmp \
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates uuid-runtime curl openssl sudo && rm -rf /var/lib/apt/lists/*
+RUN cd /tmp \
   && echo "===> Install Elasticsearch..." \
-  && wget -O elasticsearch.tar.gz "$ES_TARBAL"; \
+  && curl -sLo elasticsearch.tar.gz "$ES_TARBAL"; \
 	if [ "$ES_TARBALL_ASC" ]; then \
-		wget -O elasticsearch.tar.gz.asc "$ES_TARBALL_ASC"; \
+		curl -sLo elasticsearch.tar.gz.asc "$ES_TARBALL_ASC"; \
 		export GNUPGHOME="$(mktemp -d)"; \
 		gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$GPG_KEY"; \
 		gpg --batch --verify elasticsearch.tar.gz.asc elasticsearch.tar.gz; \
@@ -27,7 +26,7 @@ RUN apk add --no-cache -t .build-deps wget gnupg openssl \
   tar -xf elasticsearch.tar.gz \
   && ls -lah \
   && mv elasticsearch-$ES_VERSION /elasticsearch \
-  && adduser -DH -s /sbin/nologin elasticsearch \
+  && adduser --gecos --disabled-password --no-create-home --shell /usr/sbin/nologin elasticsearch \
   && echo "===> Creating Elasticsearch Paths..." \
   && for path in \
   	/elasticsearch/config \
@@ -37,8 +36,7 @@ RUN apk add --no-cache -t .build-deps wget gnupg openssl \
   mkdir -p "$path"; \
   chown -R elasticsearch:elasticsearch "$path"; \
   done \
-  && rm -rf /tmp/* \
-  && apk del --purge .build-deps
+  && rm -rf /tmp/*
 
 ENV PATH /elasticsearch/bin:$PATH
 
@@ -53,9 +51,9 @@ COPY run.sh /
 # Set environment variables defaults
 ENV ES_JAVA_OPTS "-Xms512m -Xmx512m"
 ENV CLUSTER_NAME elasticsearch-default
-ENV NODE_MASTER true
 ENV NODE_DATA true
 ENV NODE_INGEST true
+ENV NODE_MASTER true
 ENV HTTP_ENABLE true
 ENV NETWORK_HOST _site_
 ENV HTTP_CORS_ENABLE true
