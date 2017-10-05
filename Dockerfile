@@ -12,7 +12,7 @@ ENV ES_TARBALL_ASC "${DOWNLOAD_URL}/elasticsearch-${ES_VERSION}.tar.gz.asc"
 ENV GPG_KEY "46095ACC8548582C1A2699A9D27D666CD88E42B4"
 
 # Install Elasticsearch.
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates uuid-runtime curl openssl sudo && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates uuid-runtime curl openssl sudo netcat && rm -rf /var/lib/apt/lists/*
 RUN cd /tmp \
   && echo "===> Install Elasticsearch..." \
   && curl -sLo elasticsearch.tar.gz "$ES_TARBAL"; \
